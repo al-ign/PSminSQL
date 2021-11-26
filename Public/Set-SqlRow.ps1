@@ -1,4 +1,4 @@
-function Set-SqlRow {
+﻿function Set-SqlRow {
     [CmdletBinding()]
     [Alias('Update-SqlRow')]
     Param (

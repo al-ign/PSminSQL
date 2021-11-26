@@ -1,4 +1,4 @@
-function New-SqlRow {
+﻿function New-SqlRow {
     [CmdletBinding()]
     [Alias('Insert-SqlRow')]
     Param (

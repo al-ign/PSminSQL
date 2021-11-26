@@ -1,4 +1,4 @@
-function Register-Assemblies {
+﻿function Register-Assemblies {
 
 param (
     #Path to *.dll

@@ -1,4 +1,4 @@
-function Get-SqlRow {
+﻿function Get-SqlRow {
     [CmdletBinding()]
     #[Alias('')]
     Param (
