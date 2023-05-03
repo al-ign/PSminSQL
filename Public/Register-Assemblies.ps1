@@ -1,4 +1,4 @@
-function Register-Assemblies {
+﻿function Register-Assemblies {
 
 param (
     #Path to *.dll
@@ -13,7 +13,7 @@ if ($Verbose) {
     'Searching in {0}' -f ($assemblyPath | Join-Path -ChildPath 'Assemblies') | Write-Verbose
     }
 
-$assemblyPath | Join-Path -ChildPath 'Assemblies' | Get-ChildItem -Filter '*.dll' -Recurse | % {
+$assemblyPath | Get-ChildItem -Filter '*.dll' -Recurse | % {
     
     $obj = [pscustomobject]@{
             File = $_.fullname

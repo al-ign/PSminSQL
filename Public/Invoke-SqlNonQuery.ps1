@@ -1,6 +1,6 @@
 ﻿<# 
     .SYNOPSIS 
-    Query a database. 
+    Execute a non-query on a database
  
     .DESCRIPTION 
     Execute SQL queries using ADO.NET. 
@@ -22,10 +22,7 @@
     The database connection string.
 	
     .OUTPUTS
-    On SELECT commands, matching rows will be returned from the database as PowerShell objects.
-    Other commands like INSERT or DELETE are executed without any return value. The amount
-    of rows in the database affected by those commands will be shown when the -Verbose switch
-    is specified, though.
+    Amount of affected rows
 
     .NOTES
     Original work by https://github.com/off-world/PowerADO.NET/blob/master/PowerADO.NET.psm1
@@ -34,33 +31,28 @@
     ADO.NET
  
     .EXAMPLE 
-    'SELECT * FROM Customers' | Invoke-SqlQuery -Provider OleDb -ConnectionString 'Provider=Microsoft.ACE.OLEDB.12.0;Data Source=.\db1.accdb' 
- 
-    .EXAMPLE 
-    $query = "INSERT INTO Customers VALUES ('Doe','John');SELECT * FROM Customers WHERE Surname='John'" 
+    $query = "INSERT INTO Customers VALUES ('Doe','John')" 
     $query | Invoke-SqlQuery -Provider Sql -ConnectionString 'Server=db1.contoso.com;Database=CustomersDb;User Id=Admin;Password=pwd' 
  
     .EXAMPLE 
     $query1 = "INSERT INTO Customers VALUES ('Doe','John')" 
-    $query2 = "SELECT * FROM Customers WHERE Surname='John'" 
-    $query1, query2 | query Sql 'Server=db1.contoso.com;Database=CustomersDb;User Id=Admin;Password=pwd' 
+    $query1 | query Sql 'Server=db1.contoso.com;Database=CustomersDb;User Id=Admin;Password=pwd' 
 #>
-function Invoke-SqlQuery
-{
+function Invoke-SqlNonQuery {
     [CmdletBinding()]
-    [Alias('Invoke-DotNetSqlQuery')]
-
+    [Alias('Invoke-DotNetSqlNonQuery')]
+    [OutputType([int])]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipelineByPropertyName=$true, ValueFromPipeline=$true)]
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true)]
         [String]
         $Query,
 
-        [Parameter(Mandatory=$true, ValueFromPipelineByPropertyName=$true, Position=0)]
+        [Parameter(Mandatory=$true, Position=0)]
         [ValidateSet('MySqlConnector', 'MySql', 'Sql', 'OleDb', 'Odbc', 'Oracle', 'Entity', 'SqlCe')]
         [String]
         $Provider,
 
-        [Parameter(Mandatory=$true, ValueFromPipelineByPropertyName=$true, Position=1)]
+        [Parameter(Mandatory=$true, Position=1)]
         [String]
         $ConnectionString
     )
@@ -70,24 +62,13 @@ function Invoke-SqlQuery
         $sql = New-SQLConnector -Provider $Provider -ConnectionString $ConnectionString
         }
 
-    process
-    {
+    process {
         ForEach ($thisQuery in $Query) {
-
-            $sql.command.CommandText = $thisQuery.Trim()
-                
-            if ($sql.command.CommandText -match '^\s*(SELECT )|(SHOW )')
-            {
-                
-                Invoke-SqlReader -Command $sql.Command
-
-            }
-            else
-            {
-                # returns int value of affected rows
+            if (-not [String]::IsNullOrWhiteSpace($thisQuery)) {
+                $sql.command.CommandText = $thisQuery.Trim()
                 $sql.command.ExecuteNonQuery()
+                }
             }
-        }
     }
 
     end
