@@ -79,7 +79,11 @@ function Invoke-SqlQuery
             #Position=0
             )
             ]
-        $SqlConnector
+        $SqlConnector,
+        
+        # Paramters for the query
+        [hashtable]
+        $Parameters = @{}
     )
 
     begin {
@@ -121,6 +125,19 @@ function Invoke-SqlQuery
         ForEach ($thisQuery in $Query) {
 
             $SqlConnector.command.CommandText = $thisQuery.Trim()
+
+            if ($Parameters.Count -gt 0) {
+                
+                foreach ($key in $Parameters.Keys) {
+                    try {
+                        $null = $SqlConnector.Command.Parameters.AddWithValue($key,$Parameters[$key])
+                        }
+                    catch {
+                        $_
+                        }
+                    }
+
+                }
                 
             if ($SqlConnector.command.CommandText -match '^\s*(SELECT )|(SHOW )') {
                 
