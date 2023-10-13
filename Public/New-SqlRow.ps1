@@ -12,15 +12,19 @@
         [ValidateNotNullOrEmpty()]
         $Object,
 
-        # Database Name
+        # Database name
         [String]
         $Database,
 
-        # Table name to insert to
+        # Table name 
         [ValidateNotNull()]
         [ValidateNotNullOrEmpty()]
         [String]
-        $Table
+        $Table,
+
+        # Add RETURNING statement, use * to return all columns
+        [String]
+        $Returning
     )
 
     Begin {
@@ -37,42 +41,10 @@
         }
 
     End {
-    <#
-    $entryProperties = @( Get-Member -InputObject $Object -MemberType NoteProperty | Select-Object -ExpandProperty Name )
-    
-    if ($entryProperties.Count -eq 0) {
-        $entryProperties = @( Get-Member -InputObject $Object -MemberType Property | Select-Object -ExpandProperty Name )
-        }
-
-    if ($entryProperties.Count -eq 0) {
-        Write-Verbose -Message ('Could not get the object properties to convert to SQL statement')
-        return
-        }
-
- 
-
-    $out = [pscustomobject]@{
-        names = ''
-        values = ''
-        }
-
-
-    'Type: {0}' -f $Object.GetType().Name 
-    #>
 
     if ($Object.GetType().Name -eq 'Hashtable') {
         
-        <#
-        $set_def = foreach ($key in $Object.Keys) {
-            '{0}=''{1}''' -f $key, $Object[$key]
-            }
-        
-        $set_def = $set_def -join ', '
-        #>
-
         $str_Cols = $Object.psbase.Keys -join ', '
-        
-        # $str_Values = ($Object.psbase.Values | % { '''{0}''' -f $_} ) -join ', '
     
         $str_Values = foreach ($value in $Object.psbase.Values) {
 
@@ -98,12 +70,8 @@
 
             
             }
+
         $str_Values = $str_Values -join ', '
-    <#
-    'keys: {0}' -f  $Object.psbase.Keys
-    'cols: {0}' -f  $str_Cols
-    'values: {0}' -f  $str_Values
-    #>
 
         }
         
@@ -118,17 +86,13 @@
         $insert_def = '({0}) VALUES ({1})' -f $str_Cols, $str_Values
         }
 
-    $sqlQuery = 'INSERT INTO {0} {1};' -f $table_reference, $insert_def
+    $sqlQuery = 'INSERT INTO {0} {1}' -f $table_reference, $insert_def
     
-    <#
-    if ($Database.Length -gt 0) {
-        "INSERT INTO ``{0}``.``{1}`` ({2}) VALUES ({3});" -f $Database, $Table, $out.names, $out.values
+    if ($Returning) {
+        $sqlQuery = '{0} RETURNING {1}' -f $sqlQuery, $Returning
         }
-    else {
-        "INSERT INTO ``{0}`` ({1}) VALUES ({2});" -f $Table, $out.names, $out.values
-        }
-    #>
 
+    $sqlQuery = '{0};' -f $sqlQuery
     #return
     $sqlQuery
     }
