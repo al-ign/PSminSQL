@@ -33,7 +33,7 @@ function New-SQLConnector {
     [Alias('New-DotNetSqlConnector')]
     param(
         [Parameter(Mandatory=$true, Position=0)]
-        [ValidateSet('MySqlConnector', 'MySql', 'Sql', 'OleDb', 'Odbc', 'Oracle', 'Entity', 'SqlCe')]
+        [ValidateSet('MySql', 'Sql', 'OleDb', 'Odbc', 'Oracle', 'Entity', 'SqlCe')]
         [String]
         $Provider,
 
@@ -46,15 +46,11 @@ function New-SQLConnector {
 
             $connection, $command = switch ($Provider)
                 {
-                    'MySqlConnector'
-                    {
-                        [MySqlConnector.MySqlConnection]::new($ConnectionString)
-                        [MySqlConnector.mysqlcommand]::new()
-                    }
                     'MySql'
                     {
                         [MySql.Data.MySqlClient.MySqlConnection]::new($ConnectionString)
                         [mysql.data.mysqlclient.mysqlcommand]::new()
+
                     }
                     'Sql'
                     {
@@ -88,6 +84,13 @@ function New-SQLConnector {
                     }
                 }
 
+            }
+        catch {
+            Write-Error $_
+            break
+            }
+
+        try {
             $connection.Open()
             $command.Connection = $connection
             }

@@ -48,18 +48,29 @@ function Invoke-SqlNonQuery {
         $Query,
 
         [Parameter(Mandatory=$true, Position=0)]
-        [ValidateSet('MySqlConnector', 'MySql', 'Sql', 'OleDb', 'Odbc', 'Oracle', 'Entity', 'SqlCe')]
+        [ValidateSet('MySql', 'Sql', 'OleDb', 'Odbc', 'Oracle', 'Entity', 'SqlCe')]
         [String]
         $Provider,
 
         [Parameter(Mandatory=$true, Position=1)]
         [String]
-        $ConnectionString
+        $ConnectionString,
+
+        [Parameter(Mandatory=$false, Position=2)]
+        $SqlConnector
     )
 
-    begin
-    {
-        $sql = New-SQLConnector -Provider $Provider -ConnectionString $ConnectionString
+    begin {
+
+        if ($SqlConnector) {
+            $CloseConnectionOnCompletion = $false
+            }
+        else {
+            # create new
+            $CloseConnectionOnCompletion = $true
+            $SqlConnector = New-SQLConnector -Provider $Provider -ConnectionString $ConnectionString
+            }
+        
         }
 
     process {
@@ -69,10 +80,11 @@ function Invoke-SqlNonQuery {
                 $sql.command.ExecuteNonQuery()
                 }
             }
-    }
+        }
 
-    end
-    {
-        $sql.connection.Close()
-    }
+    end {
+        if ($CloseConnectionOnCompletion) {
+            $SqlConnector.connection.Close()
+            }
+        }
 }

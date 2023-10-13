@@ -47,51 +47,98 @@
 #>
 function Invoke-SqlQuery
 {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='ConnectionString')]
     [Alias('Invoke-DotNetSqlQuery')]
 
     param(
-        [Parameter(Mandatory=$true, ValueFromPipelineByPropertyName=$true, ValueFromPipeline=$true)]
+        [Parameter(ParameterSetName='ConnectionString',
+            Mandatory=$true,
+            ValueFromPipeline=$true)]
+        [Parameter(ParameterSetName='SqlConnector',
+            Mandatory=$true,
+            ValueFromPipeline=$true)]
         [String]
         $Query,
 
-        [Parameter(Mandatory=$true, ValueFromPipelineByPropertyName=$true, Position=0)]
-        [ValidateSet('MySqlConnector', 'MySql', 'Sql', 'OleDb', 'Odbc', 'Oracle', 'Entity', 'SqlCe')]
+        [Parameter(ParameterSetName='ConnectionString',
+            Mandatory=$true,
+            Position=0)]
+        [ValidateSet('MySql', 'Sql', 'OleDb', 'Odbc', 'Oracle', 'Entity', 'SqlCe')]
         [String]
         $Provider,
 
-        [Parameter(Mandatory=$true, ValueFromPipelineByPropertyName=$true, Position=1)]
+        [Parameter(ParameterSetName='ConnectionString',
+            Mandatory=$true,
+            Position=1)]
         [String]
-        $ConnectionString
+        $ConnectionString,
+
+        [Parameter(ParameterSetName='SqlConnector',
+            Mandatory=$true
+            #, 
+            #Position=0
+            )
+            ]
+        $SqlConnector
     )
 
-    begin
-    {
-        $sql = New-SQLConnector -Provider $Provider -ConnectionString $ConnectionString
+    begin {
+        $PSBoundParameters.Keys | Write-Verbose
+        # if using an already created connection check if it is open
+        # otherwise try to create a new sql connector
+
+        if ($PSBoundParameters['SqlConnector']) {
+        
+            $CloseConnectionOnCompletion = $false
+        
+            try {
+                if ($SqlConnector.Connection.State -ne 'Open') {
+                    $SqlConnector.Connection.Open()
+                    }
+                }
+            catch {
+                Write-Error ("Couldn't open SQL connection: " + $_)
+                break
+                }
+            }
+        else {
+        
+            $CloseConnectionOnCompletion = $true
+        
+            try {
+                $SqlConnector = New-SQLConnector -Provider $Provider -ConnectionString $ConnectionString
+                }
+            catch {
+                Write-Error $_
+                break
+                }
+            }
+        
         }
 
-    process
-    {
+    process {
+
         ForEach ($thisQuery in $Query) {
 
-            $sql.command.CommandText = $thisQuery.Trim()
+            $SqlConnector.command.CommandText = $thisQuery.Trim()
                 
-            if ($sql.command.CommandText -match '^\s*(SELECT )|(SHOW )')
-            {
+            if ($SqlConnector.command.CommandText -match '^\s*(SELECT )|(SHOW )') {
                 
-                Invoke-SqlReader -Command $sql.Command
+                Invoke-SqlReader -Command $SqlConnector.Command
 
-            }
-            else
-            {
+                }
+            else {
                 # returns int value of affected rows
-                $sql.command.ExecuteNonQuery()
+                $SqlConnector.command.ExecuteNonQuery()
+                }
+            }
+
+        }
+
+    end {
+        if ($CloseConnectionOnCompletion) {
+            $SqlConnector.connection.Close()
             }
         }
-    }
 
-    end
-    {
-        $sql.connection.Close()
     }
-}
