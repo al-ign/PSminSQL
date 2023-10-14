@@ -42,7 +42,7 @@
 
     End {
 
-    if ($Object.GetType().Name -eq 'Hashtable') {
+    if ($Object.GetType().Name -match 'Hashtable') {
         
         $str_Cols = $Object.psbase.Keys -join ', '
     
