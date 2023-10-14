@@ -75,15 +75,17 @@ function Invoke-SqlQuery
 
         [Parameter(ParameterSetName='SqlConnector',
             Mandatory=$true
-            #, 
-            #Position=0
             )
             ]
         $SqlConnector,
         
         # Paramters for the query
         [hashtable]
-        $Parameters = @{}
+        $Parameters = @{},
+
+        # Force reader even if the query does not starts with SELECT or SHOW statements
+        [Switch]
+        $ForceReader
     )
 
     begin {
@@ -144,9 +146,15 @@ function Invoke-SqlQuery
                 Invoke-SqlReader -Command $SqlConnector.Command
 
                 }
+            elseif ($ForceReader) {
+
+                Invoke-SqlReader -Command $SqlConnector.Command
+                
+                }
             else {
                 # returns int value of affected rows
                 $SqlConnector.command.ExecuteNonQuery()
+
                 }
             }
 
